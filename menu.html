@@ -1,1 +1,32 @@
-menu donde se movera el Admin
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menú Principal</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container d-flex justify-content-center align-items-center vh-100">
+        <div class="card p-4 shadow" style="width: 24rem;">
+            <h2 class="text-center mb-4">Menú Principal</h2>
+            <div class="d-grid gap-3">
+                <button class="btn btn-primary" onclick="navigate('index_inv.html')">Gestión de Productos</button>
+                <button class="btn btn-success" onclick="navigate('index_vhc.html')">Gestión de Vehículos</button>
+                <button class="btn btn-warning" onclick="navigate('index_us.html')">Gestión de Usuarios</button>
+                <button class="btn btn-danger" onclick="navigate('index_ped.html')">Gestión de Pedidos</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Navegar a las páginas específicas
+        function navigate(page) {
+            window.location.href = page;
+        }
+    </script>
+</body>
+</html>
