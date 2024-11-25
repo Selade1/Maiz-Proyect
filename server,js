@@ -32,9 +32,7 @@ server.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'index.html')); // Muestra 'index.html' al acceder a la raíz
 });
 
-// Rutas para las diferentes secciones
-
-// Ruta para la gestión de productos
+// Rutas para la gestión de productos
 server.get('/index_inv', async (req, res) => {
   try {
     const catalogoRef = collection(db, "catalogo");
@@ -54,12 +52,13 @@ server.get('/index_inv', async (req, res) => {
 
 // Ruta para agregar un nuevo producto
 server.post('/add-product', async (req, res) => {
-  const { ID, Nombre_producto, Precio } = req.body;
+  const { ID, Nombre_producto, Precio, Stock } = req.body;
 
   const newProductData = {
-    ID: parseInt(ID),             // ID de tipo INT
+    ID: parseInt(ID),               // ID de tipo INT
     Nombre_producto: Nombre_producto, // Nombre del producto
-    Precio: parseFloat(Precio)      // Precio de tipo FLOAT
+    Precio: parseFloat(Precio),      // Precio de tipo FLOAT
+    Stock: parseInt(Stock)           // Stock de tipo INT
   };
 
   try {
@@ -73,7 +72,64 @@ server.post('/add-product', async (req, res) => {
   }
 });
 
-// Ruta para la gestión de vehículos
+// Ruta para editar un producto
+server.get('/edit-product/:id', async (req, res) => {
+  const productId = req.params.id;
+
+  try {
+    const docRef = doc(db, "catalogo", productId);
+    const docSnap = await getDoc(docRef);
+    
+    if (docSnap.exists()) {
+      res.render('edit_product', { product: docSnap.data() }); // Renderiza el formulario de edición con los datos del producto
+    } else {
+      res.status(404).send('Producto no encontrado');
+    }
+  } catch (error) {
+    console.error("Error obteniendo el producto:", error);
+    res.status(500).send("Hubo un error al obtener el producto");
+  }
+});
+
+// Ruta para procesar la modificación de un producto
+server.post('/update-product/:id', async (req, res) => {
+  const productId = req.params.id;
+  const { ID, Nombre_producto, Precio, Stock } = req.body;
+
+  const updatedProductData = {
+    ID: parseInt(ID),
+    Nombre_producto,
+    Precio: parseFloat(Precio),
+    Stock: parseInt(Stock)
+  };
+
+  try {
+    const docRef = doc(db, "catalogo", productId);
+    await setDoc(docRef, updatedProductData); // Actualiza el producto en Firestore
+
+    res.redirect('/index_inv'); // Redirige a la lista de productos
+  } catch (error) {
+    console.error("Error actualizando el producto:", error);
+    res.status(500).send("Hubo un error al actualizar el producto");
+  }
+});
+
+// Ruta para eliminar un producto
+server.post('/delete-product/:id', async (req, res) => {
+  const productId = req.params.id;
+
+  try {
+    const docRef = doc(db, "catalogo", productId);
+    await deleteDoc(docRef); // Elimina el producto de Firestore
+
+    res.redirect('/index_inv'); // Redirige a la lista de productos
+  } catch (error) {
+    console.error("Error eliminando el producto:", error);
+    res.status(500).send("Hubo un error al eliminar el producto");
+  }
+});
+
+// Rutas para la gestión de vehículos
 server.get('/vehiculos', async (req, res) => {
   try {
     const vehiclesRef = collection(db, "vehiculo");
@@ -175,5 +231,5 @@ server.get('/menu', (req, res) => {
 
 // Inicia el servidor en el puerto 3000
 server.listen(3000, () => {
-  console.log("Servidor escuchando en puerto 3000");
+  console.log("Servidor escuchando puerto 3000");
 });

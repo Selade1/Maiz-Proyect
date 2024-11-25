@@ -86,9 +86,8 @@
 </head>
 <body class="bg-light">
 
-    <!-- Banner con icono y texto -->
     <header class="text-center">
-        <h1>Gestión de Vehículos</h1>
+        <h1>Gestión de Catalogo</h1>
         <!-- Botón para regresar al menú principal con icono -->
         <a href="/menu.html" class="btn btn-regresar">
           <img src="/maiz_incon_1.png" alt="Ícono de Menú" /> Regresar
@@ -96,29 +95,30 @@
       </header>
 
     <!-- Formulario para agregar un nuevo producto -->
-    <!-- Formulario para agregar un nuevo producto -->
-<div class="container">
-    <h2 class="text-center mb-4">Agregar Nuevo Producto</h2>
-    <form action="/add-product" method="POST">
-        <div class="mb-3">
-            <label for="ID" class="form-label">ID del Producto</label>
-            <input type="number" name="ID" class="form-control" placeholder="ID del producto" required>
-        </div>
-        <div class="mb-3">
-            <label for="Nombre_producto" class="form-label">Nombre del Producto</label>
-            <input type="text" name="Nombre_producto" class="form-control" placeholder="Nombre del producto" required>
-        </div>
-        <div class="mb-3">
-            <label for="Precio" class="form-label">Precio</label>
-            <input type="number" name="Precio" class="form-control" placeholder="Precio del producto" required>
-        </div>
-        <button type="submit" class="btn-rojo">Guardar</button>
-    </form>
-</div>
-
+    <div class="container">
+        <h2 class="text-center mb-4">Agregar Nuevo Producto</h2>
+        <form action="/add-product" method="POST">
+            <div class="mb-3">
+                <label for="ID" class="form-label">ID del Producto</label>
+                <input type="number" name="ID" class="form-control" placeholder="ID del producto" required>
+            </div>
+            <div class="mb-3">
+                <label for="Nombre_producto" class="form-label">Nombre del Producto</label>
+                <input type="text" name="Nombre_producto" class="form-control" placeholder="Nombre del producto" required>
+            </div>
+            <div class="mb-3">
+                <label for="Precio" class="form-label">Precio</label>
+                <input type="number" name="Precio" class="form-control" placeholder="Precio del producto" required>
+            </div>
+            <div class="mb-3">
+                <label for="Stock" class="form-label">Stock</label>
+                <input type="number" name="Stock" class="form-control" placeholder="Cantidad en stock" required>
+            </div>
+            <button type="submit" class="btn-rojo">Guardar</button>
+        </form>
+    </div>
 
     <!-- Tabla para mostrar los productos ingresados -->
-   
     <div class="container mt-4">
         <h2 class="text-center mb-4">Lista de Productos</h2>
         <table>
@@ -127,21 +127,29 @@
                     <th>ID</th>
                     <th>Nombre del Producto</th>
                     <th>Precio</th>
+                    <th>Stock</th>
+                    <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
-                <!-- Aquí se mostrarán los productos desde la base de datos -->
                 <% products.forEach(function(product) { %>
                     <tr>
                         <td><%= product.ID %></td>
                         <td><%= product.Nombre_producto %></td>
                         <td><%= product.Precio %></td>
+                        <td><%= product.Stock %></td>
+                        <td>
+                            <a href="/edit-product/<%= product.ID %>" class="btn btn-warning">Modificar</a>
+                            <form action="/delete-product/<%= product.ID %>" method="POST" style="display:inline;">
+                                <button type="submit" class="btn btn-danger">Eliminar</button>
+                            </form>
+                        </td>
                     </tr>
                 <% }); %>
             </tbody>
         </table>
     </div>
-    <!-- Enlace a los scripts de Bootstrap -->
+
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"></script>
 </body>
