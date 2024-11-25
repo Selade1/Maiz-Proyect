@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agregar Carro</title>
+</head>
+<body>
+    <h1>Agregar un nuevo carro</h1>
+    <form action="http://localhost:3000/add-car" method="POST" id="car-form">
+        <label for="ID">ID del Carro:</label>
+        <input type="text" id="ID" name="ID" required><br><br>
+
+        <label for="modelo">Modelo del Carro:</label>
+        <input type="text" id="modelo" name="modelo" required><br><br>
+
+        <label for="numeroDeSerie">Número de Serie:</label>
+        <input type="text" id="numeroDeSerie" name="numeroDeSerie" required><br><br>
+
+        <button type="submit">Agregar Carro</button>
+    </form>
+
+    <hr>
+
+    <h2>Carros Agregados:</h2>
+    <ul id="car-list">
+        <!-- Lista de carros agregados se mostrará aquí -->
+        <% carros.forEach(function(car) { %>
+            <li><strong>ID:</strong> <%= car.ID %>, <strong>Modelo:</strong> <%= car.modelo %>, <strong>Número de Serie:</strong> <%= car.numeroDeSerie %></li>
+        <% }); %>
+    </ul>
+
+    <script>
+        // Reinicia el formulario después de enviar
+        document.getElementById('car-form').reset();
+    </script>
+</body>
+</html>

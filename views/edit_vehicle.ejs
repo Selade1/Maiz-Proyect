@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editar Vehículo</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <div class="container mt-4">
+    <h2>Editar Vehículo</h2>
+    <form action="/update-vehicle/<%= vehicle.ID %>" method="POST">
+      <div class="mb-3">
+        <label for="ID" class="form-label">ID del vehículo</label>
+        <input type="text" name="ID" class="form-control" value="<%= vehicle.ID %>" required>
+      </div>
+      <div class="mb-3">
+        <label for="modelo" class="form-label">Modelo</label>
+        <input type="text" name="modelo" class="form-control" value="<%= vehicle.modelo %>" required>
+      </div>
+      <div class="mb-3">
+        <label for="numeroDeSerie" class="form-label">Número de serie</label>
+        <input type="text" name="numeroDeSerie" class="form-control" value="<%= vehicle.numeroDeSerie %>" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Actualizar</button>
+    </form>
+  </div>
+</body>
+</html>

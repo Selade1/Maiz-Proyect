@@ -1,0 +1,140 @@
+/* Estilos globales */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f5f5f5;
+}
+
+/* Estilo del encabezado */
+header {
+  background-color: #FFA451; /* Color principal */
+  color: white;
+  text-align: center;
+  padding: 1rem;
+  font-size: 1.5rem;
+  position: relative;
+}
+
+/* Estilo del botón "Regresar al Menú Principal" */
+.btn-regresar {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  padding: 8px 16px;
+  background-color: #ffffff;
+  border: none;
+  border-radius: 5px;
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+}
+
+.btn-regresar img {
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+}
+
+/* Estilo de los formularios */
+.container {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+form input, form button {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+/* Botón de guardar (ahora tiene el mismo esquema de color que los demás botones) */
+form button {
+  background-color: #FFA451; /* Botón en el color principal */
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+form button:hover {
+  background-color: #e8943f; /* Color más oscuro al hacer hover */
+}
+
+/* Estilo de la tabla */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+table, th, td {
+  border: 1px solid #ddd;
+}
+
+th, td {
+  padding: 10px;
+  text-align: center;
+}
+
+th {
+  background-color: #FFA451;
+  color: white;
+}
+
+/* Estilo de los botones "Modificar" y "Eliminar" */
+.btn-warning {
+  background-color: #ffc107;
+  border-color: #ffc107;
+}
+
+.btn-warning:hover {
+  background-color: #e0a800;
+  border-color: #e0a800;
+}
+
+.btn-danger {
+  background-color: #dc3545;
+  border-color: #dc3545;
+}
+
+.btn-danger:hover {
+  background-color: #c82333;
+  border-color: #c82333;
+}
+
+.btn-rojo {
+  background-color: #FFA451;
+  border-color: #FFA451;
+}
+
+.banner {
+  background-color: #FFA451; /* Color principal */
+  color: white;
+  padding: 1rem;
+  text-align: center;
+  font-size: 1.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+
+.banner img {
+  width: 30px;
+  height: 30px;
+}
+
+.btn-custom {
+  width: 100%;
+}
