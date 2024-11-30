@@ -1,7 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const { initializeApp } = require('firebase/app');
-const { getFirestore, doc, setDoc, deleteDoc, collection, getDocs, getDoc } = require('firebase/firestore');
+const { getFirestore, doc, setDoc, deleteDoc, collection, getDocs, getDoc, query, where } = require('firebase/firestore');
 const path = require('path');
 
 // Configuración de Firebase
@@ -224,12 +224,69 @@ server.post('/delete-vehicle/:id', async (req, res) => {
   }
 });
 
-// Ruta para acceder a menu.html en la carpeta public
-server.get('/menu', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'menu.html')); // Muestra 'menu.html' desde la carpeta public
+// Ruta para la gestión de pedidos y envíos con filtros
+server.get('/index_ped', async (req, res) => {
+  const { tipoPedido, cliente, vehiculo, fecha } = req.query;
+
+  let pedidosRef = collection(db, "pedidos");
+  let enviosRef = collection(db, "envios");
+
+  // Inicializamos las consultas
+  let pedidosQuery = pedidosRef;
+  let enviosQuery = enviosRef;
+
+  // Filtro por tipo de pedido (tipoEntrega)
+  if (tipoPedido) {
+    pedidosQuery = query(pedidosQuery, where("tipoEntrega", "==", tipoPedido));
+    enviosQuery = query(enviosQuery, where("tipoEntrega", "==", tipoPedido));
+  }
+
+  // Filtro por cliente
+  if (cliente) {
+    pedidosQuery = query(pedidosQuery, where("nombreCliente", "==", cliente));
+    enviosQuery = query(enviosQuery, where("cliente", "==", cliente));
+  }
+
+  // Filtro por vehículo
+  if (vehiculo) {
+    pedidosQuery = query(pedidosQuery, where("vehiculo", "==", vehiculo));
+    enviosQuery = query(enviosQuery, where("vehiculo", "==", vehiculo));
+  }
+
+  // Filtro por fecha
+  if (fecha) {
+    pedidosQuery = query(pedidosQuery, where("fecha", "==", fecha));
+    enviosQuery = query(enviosQuery, where("fecha", "==", fecha));
+  }
+
+  try {
+    const pedidosSnapshot = await getDocs(pedidosQuery);
+    const enviosSnapshot = await getDocs(enviosQuery);
+
+    const pedidos = [];
+    pedidosSnapshot.forEach((doc) => {
+      pedidos.push(doc.data()); // Agrega cada pedido a la lista
+    });
+
+    const envios = [];
+    enviosSnapshot.forEach((doc) => {
+      envios.push(doc.data()); // Agrega cada envío a la lista
+    });
+
+    // Combina los pedidos y envíos en un solo array para ser renderizado
+    const allOrders = [...pedidos, ...envios];
+
+    res.render('index_ped', { pedidos: allOrders, envios: envios }); // Pasa los datos de los pedidos y envíos a la vista
+  } catch (error) {
+    console.error("Error obteniendo los pedidos y envíos:", error);
+    res.status(500).send("Error al obtener los pedidos y envíos");
+  }
 });
+
+
+
 
 // Inicia el servidor en el puerto 3000
 server.listen(3000, () => {
-  console.log("Servidor escuchando puerto 3000");
+  console.log("Servidor escuchando en puerto 3000");
 });

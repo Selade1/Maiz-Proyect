@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Pedidos y Envíos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+    <!-- Banner -->
+    <div class="banner">
+        <span>Gestión de Pedidos y Envíos</span>
+    </div>
+
+    <!-- Filtros -->
+    <div class="container">
+        <h3 class="mb-4">Filtrar Pedidos y Envíos</h3>
+        <form method="GET" action="/index_ped">
+            <div class="row">
+                <div class="col-md-3">
+                    <label for="tipoPedido">Tipo de Pedido</label>
+                    <select name="tipoPedido" id="tipoPedido" class="form-control">
+                        <option value="">Seleccione Tipo de Pedido</option>
+                        <option value="Envio">Envio</option>
+                        <option value="Pedido">Pedido</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label for="cliente">Cliente</label>
+                    <input type="text" name="cliente" id="cliente" class="form-control" placeholder="Filtrar por cliente">
+                </div>
+
+                <div class="col-md-3">
+                    <label for="vehiculo">Vehículo</label>
+                    <input type="text" name="vehiculo" id="vehiculo" class="form-control" placeholder="Filtrar por vehículo">
+                </div>
+
+                <div class="col-md-3">
+                    <label for="fecha">Fecha</label>
+                    <input type="date" name="fecha" id="fecha" class="form-control">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3">Filtrar</button>
+        </form>
+    </div>
+
+    <!-- Tabla de Pedidos y Envíos -->
+    <div class="container mt-4">
+        <h3 class="mb-4">Lista de Pedidos y Envíos</h3>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Cliente</th>
+                    <th>Tipo de Pedido</th>
+                    <th>Vehículo</th>
+                    <th>Fecha</th>
+                    <th>Productos</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% pedidos.forEach(function(pedido) { %>
+                    <tr>
+                        <td><%= pedido.id %></td>
+                        <td><%= pedido.nombreCliente %></td>
+                        <td><%= pedido.tipoEntrega || 'N/A' %></td> <!-- Cambiado de tipoPedido a tipoEntrega -->
+                        <td><%= pedido.vehiculo || 'N/A' %></td>
+                        <td><%= pedido.fecha %></td>
+                        <td>
+                            <% pedido.productos.forEach(function(producto) { %>
+                                <div><%= producto.nombre %> - Cantidad: <%= producto.cantidad %> - Precio: <%= producto.precio %></div>
+                            <% }); %>
+                        </td>
+                    </tr>
+                <% }); %>
+                <% envios.forEach(function(envio) { %>
+                    <tr>
+                        <td><%= envio.id %></td>
+                        <td><%= envio.nombreCliente %></td>
+                        <td><%= envio.tipoEntrega || 'N/A' %></td> <!-- Cambiado de tipoPedido a tipoEntrega -->
+                        <td><%= envio.idCamion || 'N/A' %></td> <!-- ID del vehículo en envíos -->
+                        <td><%= envio.fecha %></td>
+                        <td>
+                            <% envio.productos.forEach(function(producto) { %>
+                                <div><%= producto.nombre %> - Cantidad: <%= producto.cantidad %> - Precio: <%= producto.precio %></div>
+                            <% }); %>
+                        </td>
+                    </tr>
+                <% }); %>
+            </tbody>
+            
+            
+        </table>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"></script>
+</body>
+</html>
