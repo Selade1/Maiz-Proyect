@@ -9,43 +9,57 @@
 </head>
 <body>
 
-    <!-- Banner -->
-    <div class="banner">
-        <span>Gestión de Pedidos y Envíos</span>
-    </div>
+    <header class="text-center">
+        <h1>Gestión de Pedidos</h1>
+        <!-- Botón para regresar al menú principal con icono -->
+        <a href="/menu.html" class="btn btn-regresar">
+          <img src="/maiz_incon_1.png" alt="Ícono de Menú" /> Regresar
+        </a>
+      </header>
 
     <!-- Filtros -->
-    <div class="container">
-        <h3 class="mb-4">Filtrar Pedidos y Envíos</h3>
-        <form method="GET" action="/index_ped">
-            <div class="row">
-                <div class="col-md-3">
-                    <label for="tipoPedido">Tipo de Pedido</label>
-                    <select name="tipoPedido" id="tipoPedido" class="form-control">
-                        <option value="">Seleccione Tipo de Pedido</option>
-                        <option value="Envio">Envio</option>
-                        <option value="Pedido">Pedido</option>
-                    </select>
-                </div>
-
-                <div class="col-md-3">
-                    <label for="cliente">Cliente</label>
-                    <input type="text" name="cliente" id="cliente" class="form-control" placeholder="Filtrar por cliente">
-                </div>
-
-                <div class="col-md-3">
-                    <label for="vehiculo">Vehículo</label>
-                    <input type="text" name="vehiculo" id="vehiculo" class="form-control" placeholder="Filtrar por vehículo">
-                </div>
-
-                <div class="col-md-3">
-                    <label for="fecha">Fecha</label>
-                    <input type="date" name="fecha" id="fecha" class="form-control">
-                </div>
+<div class="container">
+    <h3 class="mb-4">Filtrar Pedidos y Envíos</h3>
+    <form method="GET" action="/index_ped">
+        <div class="row">
+            <div class="col-md-3">
+                <label for="tipoPedido">Tipo de Pedido</label>
+                <select name="tipoPedido" id="tipoPedido" class="form-control">
+                    <option value="">Seleccione Tipo de Pedido</option>
+                    <option value="Envio">Envio</option>
+                    <option value="Pedido">Pedido</option>
+                </select>
             </div>
-            <button type="submit" class="btn btn-primary mt-3">Filtrar</button>
-        </form>
-    </div>
+
+            <div class="col-md-3">
+                <label for="cliente">Cliente</label>
+                <select name="cliente" id="cliente" class="form-control">
+                    <option value="">Filtrar por cliente</option>
+                    <% clientes.forEach(function(cliente) { %>
+                        <option value="<%= cliente %>"><%= cliente %></option>
+                    <% }); %>
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <label for="vehiculo">Vehículo</label>
+                <select name="vehiculo" id="vehiculo" class="form-control">
+                    <option value="">Filtrar por vehículo</option>
+                    <% vehiculos.forEach(function(vehiculo) { %>
+                        <option value="<%= vehiculo %>"><%= vehiculo %></option>
+                    <% }); %>
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <label for="fecha">Fecha</label>
+                <input type="date" name="fecha" id="fecha" class="form-control">
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3">Filtrar</button>
+    </form>
+</div>
+
 
     <!-- Tabla de Pedidos y Envíos -->
     <div class="container mt-4">
@@ -59,6 +73,7 @@
                     <th>Vehículo</th>
                     <th>Fecha</th>
                     <th>Productos</th>
+                    <th>Acción</th>
                 </tr>
             </thead>
             <tbody>
@@ -66,32 +81,51 @@
                     <tr>
                         <td><%= pedido.id %></td>
                         <td><%= pedido.nombreCliente %></td>
-                        <td><%= pedido.tipoEntrega || 'N/A' %></td> <!-- Cambiado de tipoPedido a tipoEntrega -->
-                        <td><%= pedido.vehiculo || 'N/A' %></td>
+                        <td><%= pedido.tipoEntrega || 'N/A' %></td>
+                        <td><%= 'N/A' %></td> <!-- No mostramos el vehículo en los pedidos -->
                         <td><%= pedido.fecha %></td>
                         <td>
                             <% pedido.productos.forEach(function(producto) { %>
                                 <div><%= producto.nombre %> - Cantidad: <%= producto.cantidad %> - Precio: <%= producto.precio %></div>
                             <% }); %>
                         </td>
+                        <td>
+                            <% if (pedido.estado === "cancelado") { %>
+                                <button class="btn btn-danger">Confirmar Cancelar</button>
+                            <% } else if (pedido.estado === "cerrado") { %>
+                                <button class="btn btn-success">Confirmar Cerrar</button>
+                            <% } else { %>
+                                <span>Abierto</span>
+                            <% } %>
+                        </td>
                     </tr>
                 <% }); %>
+            
+                <!-- Mostrar los envíos una sola vez -->
                 <% envios.forEach(function(envio) { %>
                     <tr>
                         <td><%= envio.id %></td>
                         <td><%= envio.nombreCliente %></td>
-                        <td><%= envio.tipoEntrega || 'N/A' %></td> <!-- Cambiado de tipoPedido a tipoEntrega -->
-                        <td><%= envio.idCamion || 'N/A' %></td> <!-- ID del vehículo en envíos -->
+                        <td><%= envio.tipoEntrega || 'N/A' %></td>
+                        <td><%= envio.idCamion || 'N/A' %></td> <!-- ID del camión en envíos -->
                         <td><%= envio.fecha %></td>
                         <td>
                             <% envio.productos.forEach(function(producto) { %>
                                 <div><%= producto.nombre %> - Cantidad: <%= producto.cantidad %> - Precio: <%= producto.precio %></div>
                             <% }); %>
                         </td>
+                        <td>
+                            <% if (envio.estado === "cancelado") { %>
+                                <button class="btn btn-danger">Confirmar Cancelar</button>
+                            <% } else if (envio.estado === "cerrado") { %>
+                                <button class="btn btn-success">Confirmar Cerrar</button>
+                            <% } else { %>
+                                <span>Abierto</span>
+                            <% } %>
+                        </td>
                     </tr>
                 <% }); %>
             </tbody>
-            
             
         </table>
     </div>

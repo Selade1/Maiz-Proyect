@@ -237,46 +237,86 @@ server.get('/index_ped', async (req, res) => {
 
   // Filtro por tipo de pedido (tipoEntrega)
   if (tipoPedido) {
-    pedidosQuery = query(pedidosQuery, where("tipoEntrega", "==", tipoPedido));
-    enviosQuery = query(enviosQuery, where("tipoEntrega", "==", tipoPedido));
+    if (tipoPedido === "Envio") {
+      enviosQuery = query(enviosQuery, where("tipoEntrega", "==", "Flete"));
+      pedidosQuery = null; // No mostrar pedidos si es "Envio"
+    } else if (tipoPedido === "Pedido") {
+      pedidosQuery = query(pedidosQuery, where("tipoEntrega", "not-in", ["Flete"]));
+      enviosQuery = null; // No mostrar envíos si es "Pedido"
+    }
   }
 
   // Filtro por cliente
   if (cliente) {
-    pedidosQuery = query(pedidosQuery, where("nombreCliente", "==", cliente));
-    enviosQuery = query(enviosQuery, where("cliente", "==", cliente));
+    if (pedidosQuery) {
+      pedidosQuery = query(pedidosQuery, where("nombreCliente", "==", cliente));
+    }
+    if (enviosQuery) {
+      enviosQuery = query(enviosQuery, where("nombreCliente", "==", cliente));
+    }
   }
 
-  // Filtro por vehículo
+  // Filtro por vehículo (solo se aplica a envíos)
   if (vehiculo) {
-    pedidosQuery = query(pedidosQuery, where("vehiculo", "==", vehiculo));
-    enviosQuery = query(enviosQuery, where("vehiculo", "==", vehiculo));
+    enviosQuery = query(enviosQuery, where("idCamion", "==", vehiculo));
+    pedidosQuery = null; // No mostrar pedidos cuando se filtra por vehículo
   }
 
   // Filtro por fecha
   if (fecha) {
-    pedidosQuery = query(pedidosQuery, where("fecha", "==", fecha));
-    enviosQuery = query(enviosQuery, where("fecha", "==", fecha));
+    // Aquí, la fecha ya está en formato 'yyyy-mm-dd' desde el frontend
+    const fechaFormatoCorrecto = fecha; // La fecha ya es correcta, no es necesario convertirla
+
+    if (pedidosQuery) {
+      pedidosQuery = query(pedidosQuery, where("fecha", "==", fechaFormatoCorrecto));
+    }
+    if (enviosQuery) {
+      enviosQuery = query(enviosQuery, where("fecha", "==", fechaFormatoCorrecto));
+    }
   }
 
   try {
-    const pedidosSnapshot = await getDocs(pedidosQuery);
-    const enviosSnapshot = await getDocs(enviosQuery);
-
     const pedidos = [];
-    pedidosSnapshot.forEach((doc) => {
-      pedidos.push(doc.data()); // Agrega cada pedido a la lista
-    });
-
     const envios = [];
-    enviosSnapshot.forEach((doc) => {
-      envios.push(doc.data()); // Agrega cada envío a la lista
+
+    if (pedidosQuery) {
+      const pedidosSnapshot = await getDocs(pedidosQuery);
+      pedidosSnapshot.forEach((doc) => {
+        pedidos.push(doc.data()); // Agrega cada pedido a la lista
+      });
+    }
+
+    if (enviosQuery) {
+      const enviosSnapshot = await getDocs(enviosQuery);
+      enviosSnapshot.forEach((doc) => {
+        envios.push(doc.data()); // Agrega cada envío a la lista
+      });
+    }
+
+    // Obtener los clientes para el filtro
+    const clientesRef = collection(db, "clientes");
+    const clientesSnapshot = await getDocs(clientesRef);
+    const clientes = [];
+    clientesSnapshot.forEach((doc) => {
+      clientes.push(doc.data().nombre); // Suponiendo que el nombre del cliente está en el campo 'nombre'
     });
 
-    // Combina los pedidos y envíos en un solo array para ser renderizado
-    const allOrders = [...pedidos, ...envios];
+    // Obtener los vehículos para el filtro
+    const vehiculosRef = collection(db, "vehiculo");
+    const vehiculosSnapshot = await getDocs(vehiculosRef);
+    const vehiculos = [];
+    vehiculosSnapshot.forEach((doc) => {
+      vehiculos.push(doc.id); // Se asume que el ID del vehículo es el valor que se muestra en el filtro
+    });
 
-    res.render('index_ped', { pedidos: allOrders, envios: envios }); // Pasa los datos de los pedidos y envíos a la vista
+    // Renderizar la vista con los datos obtenidos
+    res.render('index_ped', { 
+      pedidos: pedidos, 
+      envios: envios, 
+      clientes: clientes, 
+      vehiculos: vehiculos 
+    });
+
   } catch (error) {
     console.error("Error obteniendo los pedidos y envíos:", error);
     res.status(500).send("Error al obtener los pedidos y envíos");
@@ -284,7 +324,27 @@ server.get('/index_ped', async (req, res) => {
 });
 
 
+// Función para obtener los clientes desde Firestore
+async function getClientes() {
+  const clientesRef = collection(db, 'clientes');
+  const snapshot = await getDocs(clientesRef);
+  const clientes = [];
+  snapshot.forEach((doc) => {
+    clientes.push(doc.data().nombreCliente); // Asume que cada documento de cliente tiene un campo 'nombreCliente'
+  });
+  return clientes;
+}
 
+// Función para obtener los vehículos desde Firestore
+async function getVehiculos() {
+  const vehiculosRef = collection(db, 'vehiculo');
+  const snapshot = await getDocs(vehiculosRef);
+  const vehiculos = [];
+  snapshot.forEach((doc) => {
+    vehiculos.push(doc.data().ID); // Asume que cada documento de vehículo tiene un campo 'ID'
+  });
+  return vehiculos;
+}
 
 // Inicia el servidor en el puerto 3000
 server.listen(3000, () => {
