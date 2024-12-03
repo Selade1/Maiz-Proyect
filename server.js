@@ -3,6 +3,9 @@ const bodyParser = require('body-parser');
 const { initializeApp } = require('firebase/app');
 const { getFirestore, doc, setDoc, deleteDoc, collection, getDocs, getDoc, query, where } = require('firebase/firestore');
 const path = require('path');
+const { google } = require('googleapis');
+const multer = require('multer');
+const fs = require('fs');
 
 // Configuración de Firebase
 const firebaseConfig = {
@@ -27,50 +30,103 @@ server.use(express.static('public')); // Sirve archivos estáticos (como menu.ht
 server.set('views', path.join(__dirname, 'views')); // Directorio de vistas
 server.set('view engine', 'ejs'); // Usar EJS como motor de plantillas
 
+// Configuración de Google Drive
+const credentials = require('./google-drive-credentials.json');
+const auth = new google.auth.GoogleAuth({
+  keyFile: './google-drive-credentials.json', // Ruta al archivo JSON
+  scopes: ['https://www.googleapis.com/auth/drive.file'],
+});
+
+(async () => {
+  try {
+    const drive = google.drive({ version: 'v3', auth });
+    const res = await drive.files.list(); // Intenta listar archivos
+    console.log('Google Drive API Conectada:', res.data);
+  } catch (error) {
+    console.error('Error con las credenciales:', error);
+  }
+})();
+const drive = google.drive({ version: 'v3', auth });
+
+// Función para subir un archivo a Google Drive
+async function uploadFileToDrive(filePath, fileName, folderId) {
+  const fileMetadata = {
+    name: fileName,
+    parents: [folderId],
+  };
+  const media = {
+    mimeType: 'image/jpeg',
+    body: fs.createReadStream(filePath),
+  };
+  const response = await drive.files.create({
+    resource: fileMetadata,
+    media,
+    fields: 'id',
+  });
+  return response.data.id;
+}
+
+// Middleware para manejo de archivos
+const upload = multer({ dest: 'uploads/' }); // Carpeta temporal para archivos
+
 // Ruta para servir el archivo index.html desde la carpeta 'views'
 server.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'index.html')); // Muestra 'index.html' al acceder a la raíz
 });
 
-// Rutas para la gestión de productos
+// Ruta para listar productos
 server.get('/index_inv', async (req, res) => {
   try {
     const catalogoRef = collection(db, "catalogo");
     const querySnapshot = await getDocs(catalogoRef);
     const products = [];
-
     querySnapshot.forEach((doc) => {
-      products.push(doc.data()); // Agrega cada producto a la lista
+      products.push(doc.data());
     });
-
-    res.render('index_inv', { products: products }); // Renderiza la vista de gestión de productos
+    res.render('index_inv', { products }); // Renderiza la vista con los productos
   } catch (error) {
     console.error("Error obteniendo productos:", error);
     res.status(500).send("Error al obtener productos");
   }
 });
 
-// Ruta para agregar un nuevo producto
-server.post('/add-product', async (req, res) => {
+// Ruta para agregar un nuevo producto con imagen
+server.post('/add-product', upload.single('image'), async (req, res) => {
   const { ID, Nombre_producto, Precio, Stock } = req.body;
 
+  if (!ID) {
+    console.error('El campo ID está vacío o no fue enviado.');
+    return res.status(400).send('Error: El ID del producto es requerido.');
+  }
+
+  const file = req.file;
+
   const newProductData = {
-    ID: parseInt(ID),               // ID de tipo INT
-    Nombre_producto: Nombre_producto, // Nombre del producto
-    Precio: parseFloat(Precio),      // Precio de tipo FLOAT
-    Stock: parseInt(Stock)           // Stock de tipo INT
+    ID: parseInt(ID),
+    Nombre_producto,
+    Precio: parseFloat(Precio),
+    Stock: parseInt(Stock),
   };
 
   try {
-    const catalogoRef = collection(db, "catalogo");
-    await setDoc(doc(catalogoRef, ID.toString()), newProductData); // Usa el ID como documento
+    if (file) {
+      const folderId = '1fXrdic21Cyk-g-tyD29nPEGxznR9eGM1'; // Tu folder ID en Google Drive
+      const driveFileId = await uploadFileToDrive(file.path, file.originalname, folderId);
+      newProductData.imageUrl = `https://drive.google.com/uc?id=${driveFileId}`;
+    }
 
-    res.redirect('/index_inv'); // Redirige a la página de gestión de productos
+    const catalogoRef = collection(db, "catalogo");
+    await setDoc(doc(catalogoRef, ID.toString()), newProductData);
+
+    if (file) fs.unlinkSync(file.path); // Elimina el archivo temporal
+
+    res.redirect('/index_inv');
   } catch (error) {
-    console.error("Error agregando producto:", error);
-    res.status(500).send("Error al agregar el producto");
+    console.error('Error al agregar el producto:', error);
+    res.status(500).send('Error al agregar el producto');
   }
 });
+
 
 // Ruta para editar un producto
 server.get('/edit-product/:id', async (req, res) => {
@@ -345,6 +401,18 @@ async function getVehiculos() {
   });
   return vehiculos;
 }
+
+// Ruta para servir el archivo index_us.ejs
+server.get('/index_us', async (req, res) => {
+  try {
+    // Aquí puedes realizar cualquier consulta o lógica que necesites
+    res.render('index_us'); // Renderiza la vista 'index_us.ejs'
+  } catch (error) {
+    console.error("Error al obtener la vista:", error);
+    res.status(500).send("Hubo un error al obtener la vista");
+  }
+});
+
 
 // Inicia el servidor en el puerto 3000
 server.listen(3000, () => {
