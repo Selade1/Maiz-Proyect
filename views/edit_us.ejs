@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Usuario</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <header class="bg-orange text-white text-center p-4">
+        <h1>Editar Usuario</h1>
+    </header>
+
+    <div class="container mt-5">
+        <h2>Editar Usuario</h2>
+        <form action="/update-user/<%= id %>" method="POST">
+            <div class="mb-3">
+                <label for="nombre" class="form-label">Nombre</label>
+                <input type="text" class="form-control" id="nombre" name="nombre" value="<%= user.nombre %>" required>
+            </div>
+            <div class="mb-3">
+                <label for="tipo" class="form-label">Tipo de Usuario</label>
+                <select class="form-select" id="tipo" name="tipo" required>
+                    <option value="admin" <% if (user.tipo==='admin' ) { %>selected<% } %>>Admin</option>
+                    <option value="vendedor" <% if (user.tipo==='vendedor' ) { %>selected<% } %>>Vendedor</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="correo" class="form-label">Correo Electrónico</label>
+                <input type="email" class="form-control" id="correo" name="correo" value="<%= user.correo %>" required>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Contraseña</label>
+                <input type="password" class="form-control" id="password" name="password" value="<%= user.password %>"
+                    required>
+            </div>
+            <button type="submit" class="btn btn-primary">Actualizar Usuario</button>
+        </form>
+
+    </div>
+</body>
+
+</html>

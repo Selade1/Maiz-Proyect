@@ -1,0 +1,61 @@
+
+        /* Estilos globales */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        /* Estilo del encabezado */
+        header {
+            background-color: #FFA451; 
+            color: white;
+            text-align: center;
+            padding: 1rem;
+            font-size: 1.5rem;
+            position: relative;
+        }
+        /* Estilo de los formularios */
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        form input, form select, form button {
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        /* Botón de guardar */
+        form button {
+            background-color: #FFA451; 
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        form button:hover {
+            background-color: #e8943f; 
+        }
+        /* Estilo de la tabla */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #FFA451;
+            color: white;
+        }
+   
