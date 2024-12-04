@@ -12,19 +12,18 @@
         <h1>Gestión de Usuarios</h1>
         <!-- Botón para regresar al menú principal con icono -->
         <a href="/menu.html" class="btn btn-regresar">
-          <img src="/maiz_incon_1.png" alt="Ícono de Menú" /> Regresar
+            <img src="/maiz_incon_1.png" alt="Ícono de Menú" /> Regresar
         </a>
-      </header>
+    </header>
 
     <div class="container">
         <h3>Registrar Usuario</h3>
+        <!-- Formulario de registro -->
         <form id="userForm">
-            <!-- Nombre del Usuario -->
             <div class="mb-3">
                 <label for="nombre" class="form-label">Nombre</label>
                 <input type="text" class="form-control" id="nombre" placeholder="Ingresa el nombre del usuario" required>
             </div>
-            <!-- Tipo de Usuario -->
             <div class="mb-3">
                 <label for="userType" class="form-label">Tipo de Usuario</label>
                 <select class="form-select" id="userType" required>
@@ -33,21 +32,19 @@
                     <option value="vendedor">Vendedor</option>
                 </select>
             </div>
-            <!-- Correo Electrónico -->
             <div class="mb-3">
                 <label for="email" class="form-label">Correo Electrónico</label>
                 <input type="email" class="form-control" id="email" placeholder="Ingresa el correo" required>
             </div>
-            <!-- Contraseña -->
             <div class="mb-3">
                 <label for="password" class="form-label">Contraseña</label>
                 <input type="password" class="form-control" id="password" placeholder="Ingresa la contraseña" required>
             </div>
-            <!-- Botón de Enviar -->
             <button type="submit" class="btn btn-primary w-100">Registrar Usuario</button>
         </form>
 
         <h3 class="mt-4">Usuarios Registrados</h3>
+        <!-- Tabla de usuarios -->
         <table class="table table-bordered">
             <thead>
                 <tr>
@@ -61,30 +58,10 @@
         </table>
     </div>
 
-    <script type="module">
-        // Importar funciones necesarias de Firebase
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDocs, collection, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.17.2/firebase-firestore.js";
-
-        // Configuración de Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyDir1EGmb6BKQHqLMTjtEb3QWCDLaaXK_0",
-            authDomain: "maiz-db.firebaseapp.com",
-            projectId: "maiz-db",
-            storageBucket: "maiz-db.appspot.com",
-            messagingSenderId: "585244696486",
-            appId: "1:585244696486:web:efc2e9c4cbc75c3fd9b967"
-        };
-
-        // Inicializar Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
+    <!-- Script para manejar el frontend -->
+    <script>
         // Manejo del formulario de registro
-        const userForm = document.getElementById('userForm');
-        userForm.addEventListener('submit', async (event) => {
+        document.getElementById('userForm').addEventListener('submit', async (event) => {
             event.preventDefault();
 
             const nombre = document.getElementById('nombre').value;
@@ -93,96 +70,67 @@
             const password = document.getElementById('password').value;
 
             try {
-                // Crear usuario en Firebase Authentication
-                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                const userId = userCredential.user.uid;
-
-                // Guardar datos adicionales en Firestore
-                await setDoc(doc(db, "usuarios", userId), {
-                    nombre: nombre,
-                    tipo: userType,
-                    correo: email,
-                    creadoEn: new Date().toISOString()
+                const response = await fetch('/register-user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nombre, userType, email, password }),
                 });
 
-                alert('Usuario registrado con éxito');
-                userForm.reset();
-                cargarUsuarios(); // Actualizar lista de usuarios
+                const result = await response.json();
+                if (response.ok) {
+                    alert(result.message);
+                    document.getElementById('userForm').reset();
+                    cargarUsuarios(); // Actualiza la lista de usuarios
+                } else {
+                    alert('Error: ' + result.error);
+                }
             } catch (error) {
-                alert('Error al registrar usuario: ' + error.message);
+                console.error('Error:', error);
+                alert('Hubo un error al registrar al usuario');
             }
         });
 
-        // Cargar lista de usuarios desde Firestore
+        // Función para cargar usuarios desde el servidor
         async function cargarUsuarios() {
-            const usuariosRef = collection(db, "usuarios");
-            const querySnapshot = await getDocs(usuariosRef);
-            const usuarios = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            
-            const usuariosLista = document.getElementById('usuariosLista');
-            usuariosLista.innerHTML = ''; // Limpiar la tabla antes de llenarla
-
-            usuarios.forEach(usuario => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${usuario.nombre}</td>
-                    <td>${usuario.tipo}</td>
-                    <td>${usuario.correo}</td>
-                    <td>
-                        <button class="btn btn-warning" onclick="modificarUsuario('${usuario.id}', '${usuario.nombre}', '${usuario.tipo}', '${usuario.correo}')">Modificar</button>
-                        <button class="btn btn-danger" onclick="eliminarUsuario('${usuario.id}')">Eliminar</button>
-                    </td>
-                `;
-                usuariosLista.appendChild(row);
-            });
-        }
-
-        // Eliminar usuario de Firestore
-        async function eliminarUsuario(userId) {
             try {
-                await deleteDoc(doc(db, "usuarios", userId)); // Elimina el documento de Firestore
-                alert('Usuario eliminado');
-                cargarUsuarios(); // Vuelve a cargar la lista actualizada
+                const response = await fetch('/get-users');
+                const usuarios = await response.json();
+
+                const usuariosLista = document.getElementById('usuariosLista');
+                usuariosLista.innerHTML = '';
+
+                usuarios.forEach(usuario => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${usuario.nombre}</td>
+                        <td>${usuario.tipo}</td>
+                        <td>${usuario.correo}</td>
+                        <td>
+                            <a href="/edit-user/${usuario.id}" class="btn btn-warning">Modificar</a>
+                            <button class="btn btn-danger" onclick="eliminarUsuario('${usuario.id}')">Eliminar</button>
+                        </td>
+                    `;
+                    usuariosLista.appendChild(row);
+                });
             } catch (error) {
-                alert('Error al eliminar usuario: ' + error.message);
+                console.error('Error al cargar usuarios:', error);
             }
         }
 
-        // Modificar usuario
-        async function modificarUsuario(userId, nombre, tipo, correo) {
-            // Pre-cargar los valores en el formulario de registro para editar
-            document.getElementById('nombre').value = nombre;
-            document.getElementById('userType').value = tipo;
-            document.getElementById('email').value = correo;
-
-            // Cambiar el comportamiento del formulario para actualizar
-            userForm.removeEventListener('submit', handleFormSubmit);
-            userForm.addEventListener('submit', function handleFormSubmitEdit(event) {
-                event.preventDefault();
-                actualizarUsuario(userId);
-            });
-        }
-
-        // Actualizar usuario
-        async function actualizarUsuario(userId) {
-            const nombre = document.getElementById('nombre').value;
-            const userType = document.getElementById('userType').value;
-            const email = document.getElementById('email').value;
+        // Función para eliminar usuario
+        async function eliminarUsuario(id) {
+            if (!confirm('¿Estás seguro de eliminar este usuario?')) return;
 
             try {
-                await updateDoc(doc(db, "usuarios", userId), {
-                    nombre: nombre,
-                    tipo: userType,
-                    correo: email
-                });
-
-                alert('Usuario actualizado con éxito');
-                userForm.reset();
-                cargarUsuarios(); // Volver a cargar la lista
-                userForm.removeEventListener('submit', handleFormSubmitEdit);
-                userForm.addEventListener('submit', handleFormSubmit);
+                const response = await fetch(`/delete-user/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    alert('Usuario eliminado con éxito');
+                    cargarUsuarios();
+                } else {
+                    alert('Error al eliminar usuario');
+                }
             } catch (error) {
-                alert('Error al actualizar usuario: ' + error.message);
+                console.error('Error al eliminar usuario:', error);
             }
         }
 

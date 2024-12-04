@@ -91,12 +91,17 @@
                         </td>
                         <td>
                             <% if (pedido.estado === "cancelado") { %>
-                                <button class="btn btn-danger">Confirmar Cancelar</button>
+                                <button class="btn btn-danger" onclick="confirmarCancelar('<%= pedido.id %>', 'pedido', <%= JSON.stringify(pedido.productos) %>)">Confirmar Cancelar</button>
                             <% } else if (pedido.estado === "cerrado") { %>
-                                <button class="btn btn-success">Confirmar Cerrar</button>
+                                <button class="btn btn-success" onclick="abrirModal('<%= pedido.id %>', 'pedido', '<%= pedido.nombreCliente %>', '<%= pedido.tipoEntrega %>', '<%= pedido.fecha %>')">Confirmar Cerrar</button>
+                            <% } else if (pedido.estado === "cerrado confirmado") { %>
+                                <span class="text-success">Pedido Cerrado</span>
+                            <% } else if (pedido.estado === "cancelación confirmada") { %>
+                                <span class="text-danger">Pedido Cancelado</span>
                             <% } else { %>
                                 <span>Abierto</span>
                             <% } %>
+                                                                                 
                         </td>
                     </tr>
                 <% }); %>
@@ -116,20 +121,121 @@
                         </td>
                         <td>
                             <% if (envio.estado === "cancelado") { %>
-                                <button class="btn btn-danger">Confirmar Cancelar</button>
+                                <button class="btn btn-danger" onclick="confirmarCancelar('<%= envio.id %>', 'envio', <%= JSON.stringify(envio.productos) %>)">Confirmar Cancelar</button>
                             <% } else if (envio.estado === "cerrado") { %>
-                                <button class="btn btn-success">Confirmar Cerrar</button>
+                                <button class="btn btn-success" onclick="abrirModal('<%= envio.id %>', 'envio', '<%= envio.nombreCliente %>', '<%= envio.tipoEntrega %>', '<%= envio.fecha %>')">Confirmar Cerrar</button>
+                            <% } else if (envio.estado === "cerrado confirmado") { %>
+                                <span class="text-success">Pedido Cerrado</span>
+                            <% } else if (envio.estado === "cancelación confirmada") { %>
+                                <span class="text-danger">Pedido Cancelado</span>
                             <% } else { %>
                                 <span>Abierto</span>
                             <% } %>
+                                                                                     
                         </td>
                     </tr>
                 <% }); %>
+                
             </tbody>
             
         </table>
     </div>
 
+    <script>
+        async function confirmarCancelar(id, tipo, productos) {
+            if (!confirm("¿Estás seguro de confirmar la cancelación?")) return;
+    
+            try {
+                const response = await fetch('/confirm-cancel', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ id, tipo, productos }),
+                });
+    
+                if (response.ok) {
+                    const result = await response.json();
+                    alert(result.message);
+                    location.reload(); // Recargar la página para actualizar la vista
+                } else {
+                    const error = await response.json();
+                    alert("Error: " + error.error);
+                }
+            } catch (error) {
+                console.error("Error al confirmar cancelación:", error);
+                alert("Error al confirmar cancelación.");
+            }
+        }
+    </script>
+    
+
+    <!-- Modal para subir imagen -->
+<div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="uploadModalLabel">Subir Imagen de Confirmación</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="uploadForm">
+          <div class="modal-body">
+            <input type="hidden" id="modal-id" name="id">
+            <input type="hidden" id="modal-tipo" name="tipo">
+            <input type="hidden" id="modal-cliente" name="cliente">
+            <input type="hidden" id="modal-tipoEntrega" name="tipoEntrega">
+            <input type="hidden" id="modal-fecha" name="fecha">
+            <div class="mb-3">
+              <label for="image" class="form-label">Selecciona una imagen:</label>
+              <input type="file" class="form-control" id="image" name="image" accept="image/*" required>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary">Subir Imagen</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+      
+  <script>
+    function abrirModal(id, tipo, cliente, tipoEntrega, fecha) {
+      document.getElementById('modal-id').value = id;
+      document.getElementById('modal-tipo').value = tipo;
+      document.getElementById('modal-cliente').value = cliente;
+      document.getElementById('modal-tipoEntrega').value = tipoEntrega;
+      document.getElementById('modal-fecha').value = fecha;
+      const modal = new bootstrap.Modal(document.getElementById('uploadModal'));
+      modal.show();
+    }
+  
+    document.getElementById('uploadForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const formData = new FormData(event.target);
+  
+      try {
+        const response = await fetch('/confirm-close', {
+          method: 'POST',
+          body: formData,
+        });
+  
+        if (response.ok) {
+          const result = await response.json();
+          alert(result.message);
+          location.reload(); // Recarga la página
+        } else {
+          const error = await response.json();
+          alert('Error: ' + error.error);
+        }
+      } catch (error) {
+        console.error('Error al subir la imagen:', error);
+        alert('Error al subir la imagen.');
+      }
+    });
+  </script>
+  
+      
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"></script>
 </body>

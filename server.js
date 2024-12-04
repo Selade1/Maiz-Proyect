@@ -6,6 +6,14 @@ const path = require('path');
 const { google } = require('googleapis');
 const multer = require('multer');
 const fs = require('fs');
+const admin = require('firebase-admin');
+
+const serviceAccount = require('./service-account.json');
+
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+});
+
 
 // Configuración de Firebase
 const firebaseConfig = {
@@ -24,6 +32,7 @@ const db = getFirestore(app);
 // Configuración del servidor Express
 const server = express();
 server.use(bodyParser.urlencoded({ extended: true }));
+server.use(express.json());
 server.use(express.static('public')); // Sirve archivos estáticos (como menu.html) desde la carpeta 'public'
 
 // Configura EJS como motor de plantillas
@@ -412,6 +421,190 @@ server.get('/index_us', async (req, res) => {
     res.status(500).send("Hubo un error al obtener la vista");
   }
 });
+
+server.post('/register-user', async (req, res) => {
+  const { nombre, userType, email, password } = req.body;
+
+  try {
+    // Aquí debes usar Firebase Admin SDK para manejar la autenticación en el backend
+    const admin = require('firebase-admin');
+    const userRecord = await admin.auth().createUser({
+      email: email,
+      password: password,
+    });
+
+    const userId = userRecord.uid;
+
+    // Guardar datos adicionales en Firestore
+    await setDoc(doc(db, "usuarios", userId), {
+      nombre: nombre,
+      tipo: userType,
+      correo: email,
+      creadoEn: new Date().toISOString(),
+    });
+
+    res.status(200).json({ message: 'Usuario registrado con éxito' });
+  } catch (error) {
+    console.error('Error al registrar usuario:', error);
+    res.status(500).json({ error: 'Hubo un error al registrar el usuario' });
+  }
+});
+
+
+server.get('/get-users', async (req, res) => {
+  try {
+    const usuariosRef = collection(db, "usuarios");
+    const querySnapshot = await getDocs(usuariosRef);
+    const usuarios = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+    res.status(200).json(usuarios);
+  } catch (error) {
+    console.error('Error al obtener usuarios:', error);
+    res.status(500).json({ error: 'Hubo un error al obtener los usuarios' });
+  }
+});
+
+server.get('/edit-user/:id', async (req, res) => {
+  const userId = req.params.id;
+
+  try {
+    // Obtener el usuario de Firestore
+    const userRef = doc(db, "usuarios", userId);
+    const userSnap = await getDoc(userRef);
+
+    if (userSnap.exists()) {
+      // Renderizar la vista edit_us.ejs con los datos del usuario
+      res.render('edit_us', { id: userId, user: userSnap.data() });
+    } else {
+      res.status(404).send('Usuario no encontrado');
+    }
+  } catch (error) {
+    console.error('Error al obtener el usuario:', error);
+    res.status(500).send('Hubo un error al obtener el usuario');
+  }
+});
+
+server.post('/update-user/:id', async (req, res) => {
+  const userId = req.params.id;
+  const { nombre, tipo, correo, password } = req.body;
+
+  try {
+      // Actualizar datos en Firestore
+      const userRef = doc(db, "usuarios", userId);
+      await setDoc(userRef, { nombre, tipo, correo }, { merge: true });
+
+      // Actualizar datos en Firebase Authentication
+      await admin.auth().updateUser(userId, {
+          email: correo,
+          password: password,
+      });
+
+      res.redirect('/index_us'); // Redirigir a la lista de usuarios
+  } catch (error) {
+      console.error('Error al actualizar usuario:', error);
+      res.status(500).send('Hubo un error al actualizar el usuario');
+  }
+});
+
+server.delete('/delete-user/:id', async (req, res) => {
+  const userId = req.params.id;
+
+  try {
+      await admin.auth().deleteUser(userId); // Eliminar de Firebase Authentication
+      const userRef = doc(db, "usuarios", userId);
+      await deleteDoc(userRef); // Eliminar de Firestore
+      res.status(200).send('Usuario eliminado con éxito');
+  } catch (error) {
+      console.error('Error al eliminar usuario:', error);
+      res.status(500).send('Error al eliminar usuario');
+  }
+});
+
+server.post('/confirm-cancel', async (req, res) => {
+  const { id, tipo, productos } = req.body; // Recibe el ID, tipo y productos
+
+  try {
+      // Actualiza el estado en Firestore (pedidos o envíos)
+      const collectionName = tipo === "pedido" ? "pedidos" : "envios";
+      const docRef = doc(db, collectionName, id);
+      await setDoc(docRef, { estado: "cancelación confirmada" }, { merge: true });
+
+      // Actualiza el inventario en la colección 'catalogo'
+      for (const producto of productos) {
+          const catalogoRef = doc(db, "catalogo", producto.nombre);
+          const catalogoSnap = await getDoc(catalogoRef);
+
+          if (catalogoSnap.exists()) {
+              const currentStock = catalogoSnap.data().Stock || 0;
+              const updatedStock = currentStock + producto.cantidad;
+              await setDoc(catalogoRef, { Stock: updatedStock }, { merge: true });
+          }
+      }
+
+      res.status(200).json({ message: "Cancelación confirmada y stock actualizado." });
+  } catch (error) {
+      console.error("Error al confirmar cancelación:", error);
+      res.status(500).json({ error: "Error al confirmar cancelación." });
+  }
+});
+
+server.post('/upload-file', upload.single('archivo'), async (req, res) => {
+  const { id, tipo, cliente, fecha } = req.body;
+
+  try {
+    // Generar nombre de archivo
+    const fileName = `${id}_${cliente}_${tipo}_${fecha}.jpg`;
+
+    // Subir archivo a Google Drive
+    const folderId = '1B4WU662cLDdAhg988zibY_9bRYYWDmuP'; // Cambia por el ID de tu carpeta en Google Drive
+    const driveFileId = await uploadFileToDrive(req.file.path, fileName, folderId);
+
+    // Eliminar archivo temporal
+    fs.unlinkSync(req.file.path);
+
+    res.status(200).json({
+      message: 'Imagen subida con éxito',
+      imageUrl: `https://drive.google.com/uc?id=${driveFileId}`,
+    });
+  } catch (error) {
+    console.error('Error al subir archivo:', error);
+    res.status(500).json({ error: 'Error al subir archivo' });
+  }
+});
+
+server.post('/confirm-close', upload.single('image'), async (req, res) => {
+  const { id, tipo, cliente, tipoEntrega, fecha } = req.body;
+  const file = req.file; // Imagen subida
+  const folderId = '1B4WU662cLDdAhg988zibY_9bRYYWDmuP'; // Cambia por tu folderId real
+
+  try {
+    if (!file) {
+      return res.status(400).json({ error: 'No se proporcionó ninguna imagen.' });
+    }
+
+    // Formatear el nombre del archivo
+    const fileName = `${id},${cliente},${tipoEntrega},${fecha}.jpg`;
+
+    // Subir la imagen a Google Drive
+    const driveFileId = await uploadFileToDrive(file.path, fileName, folderId);
+
+    // Eliminar el archivo temporal
+    fs.unlinkSync(file.path);
+
+    // Actualizar el estado del pedido/envío en Firestore
+    const collectionName = tipo === 'pedido' ? 'pedidos' : 'envios';
+    const docRef = doc(db, collectionName, id);
+    await setDoc(docRef, { estado: 'cerrado confirmado' }, { merge: true });
+
+    res.status(200).json({ message: 'Cierre confirmado y archivo subido con éxito.' });
+  } catch (error) {
+    console.error('Error al confirmar cierre:', error);
+    res.status(500).json({ error: 'Error al confirmar cierre.' });
+  }
+});
+
 
 
 // Inicia el servidor en el puerto 3000
