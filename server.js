@@ -83,6 +83,42 @@ server.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'index.html')); // Muestra 'index.html' al acceder a la raíz
 });
 
+
+// Ruta para el login
+server.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const userRecord = await admin.auth().getUserByEmail(email);
+    const userRef = doc(db, 'usuarios', userRecord.uid);
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) {
+      return res.status(404).send('Usuario no encontrado');
+    }
+
+    const userData = userSnap.data();
+
+    if (userData.tipo === 'admin') {
+      // Si el tipo es admin, renderiza la vista 'menu.ejs'
+      res.render('menu');
+    } else {
+      res.status(401).send('Acceso denegado: No eres un administrador');
+    }
+  } catch (error) {
+    console.error('Error al autenticar el usuario:', error);
+    res.status(404).send('Error: ' + error.message);
+  }
+});
+
+
+
+// Ruta para el menú de administrador
+server.get('/menu', (req, res) => {
+  res.render('menu'); // Asegúrate de tener un archivo 'menu.ejs' para el menú de administrador
+});
+
+
 // Ruta para listar productos
 server.get('/index_inv', async (req, res) => {
   try {
