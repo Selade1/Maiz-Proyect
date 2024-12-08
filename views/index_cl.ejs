@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Clientes</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <header class="text-center">
+        <h1>Gestión de Clientes</h1>
+        <!-- Botón para regresar al menú principal con icono -->
+        <a href="/menu" class="btn btn-regresar">
+            <img src="/maiz_incon_1.png" alt="Ícono de Menú" /> Regresar
+        </a>
+    </header>
+
+    <div class="container">
+        <h1 class="text-center mt-4">Gestión de Clientes</h1>
+
+        <!-- Formulario para agregar un nuevo cliente -->
+        <form id="form-add-client" method="POST" action="/add-client" class="mt-4">
+            <div class="mb-3">
+                <label for="nombre" class="form-label">Nombre Cliente</label>
+                <input type="text" class="form-control" id="nombre" name="nombre" required>
+            </div>
+            <div class="mb-3">
+                <label for="direccion" class="form-label">Dirección</label>
+                <input type="text" class="form-control" id="direccion" name="direccion" required>
+            </div>
+            <div class="mb-3">
+                <label for="correo" class="form-label">Correo/Email</label>
+                <input type="email" class="form-control" id="correo" name="correo" required>
+            </div>
+            <div class="mb-3">
+                <label for="telefono" class="form-label">Teléfono</label>
+                <input type="text" class="form-control" id="telefono" name="telefono" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Agregar Cliente</button>
+        </form>
+
+        <!-- Lista de clientes -->
+        <h2 class="mt-5">Lista de Clientes</h2>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Dirección</th>
+                    <th>Correo</th>
+                    <th>Teléfono</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% clientes.forEach(function(cliente) { %>
+                    <tr>
+                        <td><%= cliente.id %></td>
+                        <td><%= cliente.nombre %></td>
+                        <td><%= cliente.direccion %></td>
+                        <td><%= cliente.correo %></td>
+                        <td><%= cliente.telefono %></td>
+                        <td>
+                            <button class="btn btn-warning btn-sm" onclick="editClient('<%= cliente.id %>')">Modificar</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteClient('<%= cliente.id %>')">Eliminar</button>
+                        </td>
+                    </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function editClient(id) {
+            window.location.href = `/edit-client/${id}`;
+        }
+
+        async function deleteClient(id) {
+            if (confirm("¿Estás seguro de eliminar este cliente?")) {
+                try {
+                    const response = await fetch(`/delete-client/${id}`, {
+                        method: "DELETE",
+                    });
+                    if (response.ok) {
+                        alert("Cliente eliminado con éxito");
+                        location.reload();
+                    } else {
+                        alert("Error al eliminar el cliente");
+                    }
+                } catch (error) {
+                    console.error("Error al eliminar cliente:", error);
+                    alert("Error al eliminar cliente");
+                }
+            }
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"></script>
+</body>
+</html>

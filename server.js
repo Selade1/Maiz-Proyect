@@ -562,29 +562,59 @@ server.post('/confirm-cancel', async (req, res) => {
   const { id, tipo, productos } = req.body; // Recibe el ID, tipo y productos
 
   try {
-      // Actualiza el estado en Firestore (pedidos o envíos)
-      const collectionName = tipo === "pedido" ? "pedidos" : "envios";
-      const docRef = doc(db, collectionName, id);
-      await setDoc(docRef, { estado: "cancelación confirmada" }, { merge: true });
+    // Actualiza el estado en Firestore (pedidos o envíos)
+    const collectionName = tipo === "pedido" ? "pedidos" : "envios";
+    const docRef = doc(db, collectionName, id);
+    await setDoc(docRef, { estado: "cancelación confirmada" }, { merge: true });
 
-      // Actualiza el inventario en la colección 'catalogo'
-      for (const producto of productos) {
-          const catalogoRef = doc(db, "catalogo", producto.nombre);
-          const catalogoSnap = await getDoc(catalogoRef);
-
-          if (catalogoSnap.exists()) {
-              const currentStock = catalogoSnap.data().Stock || 0;
-              const updatedStock = currentStock + producto.cantidad;
-              await setDoc(catalogoRef, { Stock: updatedStock }, { merge: true });
-          }
+    // Actualiza el inventario en la colección 'catalogo'
+    for (const producto of productos) {
+      let catalogoRef;
+    
+      if (producto.ID) {
+        catalogoRef = doc(db, "catalogo", producto.ID.toString());
+      } else if (producto.nombre) {
+        // Busca el producto por nombre si no hay ID
+        const querySnapshot = await getDocs(query(collection(db, "catalogo"), where("Nombre_producto", "==", producto.nombre)));
+        if (!querySnapshot.empty) {
+          catalogoRef = doc(db, "catalogo", querySnapshot.docs[0].id);
+        } else {
+          console.error(`Producto no encontrado por nombre: ${producto.nombre}`);
+          continue; // Si no se encuentra, ignora este producto
+        }
+      } else {
+        console.error(`Producto inválido: ${JSON.stringify(producto)}`);
+        continue; // Ignora productos sin ID ni nombre
       }
+    
+      const catalogoSnap = await getDoc(catalogoRef);
+    
+      if (catalogoSnap.exists()) {
+        const productData = catalogoSnap.data();
+        const currentStock = productData.Stock || 0;
+        const updatedStock = currentStock + producto.cantidad;
+    
+        await setDoc(catalogoRef, {
+          Stock: updatedStock,
+          Precio: productData.Precio,
+          Nombre_producto: productData.Nombre_producto,
+          imageUrl: productData.imageUrl,
+        }, { merge: true });
+      } else {
+        console.warn(`Producto no encontrado en catalogo: ${producto.ID || producto.nombre}`);
+      }
+    }
+    
 
-      res.status(200).json({ message: "Cancelación confirmada y stock actualizado." });
+    res.status(200).json({ message: "Cancelación confirmada y stock actualizado." });
   } catch (error) {
-      console.error("Error al confirmar cancelación:", error);
-      res.status(500).json({ error: "Error al confirmar cancelación." });
+    console.error("Error al confirmar cancelación:", error);
+    res.status(500).json({ error: "Error al confirmar cancelación." });
   }
 });
+
+
+
 
 server.post('/upload-file', upload.single('archivo'), async (req, res) => {
   const { id, tipo, cliente, fecha } = req.body;
@@ -640,6 +670,117 @@ server.post('/confirm-close', upload.single('image'), async (req, res) => {
     res.status(500).json({ error: 'Error al confirmar cierre.' });
   }
 });
+
+// Ruta para listar todos los clientes
+server.get('/index_cl', async (req, res) => {
+  try {
+      const clientesRef = collection(db, "clientes");
+      const querySnapshot = await getDocs(clientesRef);
+      const clientes = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+      }));
+      res.render('index_cl', { clientes });
+  } catch (error) {
+      console.error('Error al obtener clientes:', error);
+      res.status(500).send('Error al obtener clientes');
+  }
+});
+
+// Ruta para agregar un nuevo cliente
+server.post('/add-client', async (req, res) => {
+  const { nombre, direccion, correo, telefono } = req.body;
+
+  try {
+      const clientesRef = collection(db, "clientes");
+      const querySnapshot = await getDocs(clientesRef);
+
+      // Validar si alguno de los campos ya existe
+      const clienteExiste = querySnapshot.docs.some(doc => {
+          const data = doc.data();
+          return (
+              data.nombre === nombre ||
+              data.direccion === direccion ||
+              data.correo === correo ||
+              data.telefono === telefono
+          );
+      });
+
+      if (clienteExiste) {
+          return res.status(400).send('Error: Alguno de los datos ya existe');
+      }
+
+      // Obtener el ID autoincrementado
+      const id = (querySnapshot.size + 1).toString().padStart(3, '0');
+
+      // Crear un nuevo cliente
+      await setDoc(doc(clientesRef, id), {
+          id,
+          nombre,
+          direccion,
+          correo,
+          telefono,
+      });
+
+      res.redirect('/index_cl');
+  } catch (error) {
+      console.error('Error al agregar cliente:', error);
+      res.status(500).send('Error al agregar cliente');
+  }
+});
+
+// Ruta para eliminar un cliente
+server.delete('/delete-client/:id', async (req, res) => {
+  const clientId = req.params.id;
+
+  try {
+      const clientRef = doc(db, "clientes", clientId);
+      await deleteDoc(clientRef);
+      res.status(200).send('Cliente eliminado con éxito');
+  } catch (error) {
+      console.error('Error al eliminar cliente:', error);
+      res.status(500).send('Error al eliminar cliente');
+  }
+});
+
+// Ruta para obtener los datos de un cliente para editar
+// Ruta para mostrar el formulario de edición de un cliente
+server.get('/edit-client/:id', async (req, res) => {
+  const clientId = req.params.id;
+
+  try {
+      const clientRef = doc(db, "clientes", clientId);
+      const clientSnap = await getDoc(clientRef);
+
+      if (!clientSnap.exists()) {
+          return res.status(404).send('Cliente no encontrado');
+      }
+
+      res.render('edit_cl', { cliente: clientSnap.data() }); // Cambiado a 'edit_cl'
+  } catch (error) {
+      console.error('Error al obtener cliente:', error);
+      res.status(500).send('Error al obtener cliente');
+  }
+});
+
+
+// Ruta para actualizar un cliente
+server.post('/update-client/:id', async (req, res) => {
+  const clientId = req.params.id;
+  const { nombre, direccion, correo, telefono } = req.body;
+
+  try {
+      const clientRef = doc(db, "clientes", clientId);
+
+      await setDoc(clientRef, { nombre, direccion, correo, telefono }, { merge: true });
+
+      res.redirect('/index_cl');
+  } catch (error) {
+      console.error('Error al actualizar cliente:', error);
+      res.status(500).send('Error al actualizar cliente');
+  }
+});
+
 
 
 
